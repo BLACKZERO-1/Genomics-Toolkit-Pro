@@ -1,10 +1,10 @@
 (
 (
+Seq1_Ecoli:0.00000,
+Seq3_Pseudomonas:0.04545)
+:0.00000,
 (
-Seq1:0.00000,
-Seq2:0.00000)
+Seq2_Salmonella:0.03030,
+Seq4_Bacillus:0.03030)
 :0.00000,
-Seq3:0.01786)
-:0.00000,
-Seq4:0.01786,
-Seq5:0.01786);
+Seq5_Staphylococcus:0.01515);
