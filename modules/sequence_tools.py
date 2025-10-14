@@ -2,6 +2,7 @@ from Bio.Seq import Seq
 from Bio.SeqUtils import GC
 from Bio import Restriction
 import numpy as np
+import re
 
 def calculate_gc_content(seq):
     """Calculates the GC content of a sequence."""
@@ -85,3 +86,43 @@ def find_restriction_sites(seq, enzyme):
     search_results = batch.search(Seq(seq))
     cut_sites = search_results.get(enzyme, [])
     return cut_sites
+def design_primers(seq, target_start, target_end, primer_len=20):
+    """Designs basic forward and reverse primers for a target region."""
+    seq_obj = Seq(seq)
+
+    # Design forward primer
+    forward_primer_seq = seq_obj[target_start : target_start + primer_len]
+
+    # Design reverse primer
+    reverse_primer_template = seq_obj[target_end - primer_len : target_end]
+    reverse_primer_seq = reverse_primer_template.reverse_complement()
+
+    # Calculate Melting Temperature (Tm) using the basic formula: 4(G+C) + 2(A+T)
+    tm_forward = 4 * (forward_primer_seq.count('G') + forward_primer_seq.count('C')) + 2 * (forward_primer_seq.count('A') + forward_primer_seq.count('T'))
+    tm_reverse = 4 * (reverse_primer_seq.count('G') + reverse_primer_seq.count('C')) + 2 * (reverse_primer_seq.count('A') + reverse_primer_seq.count('T'))
+
+    primers = {
+        "Forward Primer": str(forward_primer_seq),
+        "Forward Tm (°C)": tm_forward,
+        "Reverse Primer": str(reverse_primer_seq),
+        "Reverse Tm (°C)": tm_reverse
+    }
+    return primers
+
+def find_motif(seq, pattern):
+    """Finds all occurrences of a motif/pattern in a sequence using regex."""
+    # re.IGNORECASE makes the search case-insensitive
+    matches = re.finditer(pattern, seq, re.IGNORECASE)
+    # Store the start and end position of each match
+    positions = [(match.start(), match.end()) for match in matches]
+    return positions
+def kmer_analysis(seq, k):
+    """Counts the occurrences of each k-mer in a sequence."""
+    kmer_counts = {}
+    for i in range(len(seq) - k + 1):
+        kmer = seq[i:i+k]
+        if kmer in kmer_counts:
+            kmer_counts[kmer] += 1
+        else:
+            kmer_counts[kmer] = 1
+    return kmer_counts

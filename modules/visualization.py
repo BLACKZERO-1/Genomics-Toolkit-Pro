@@ -43,3 +43,19 @@ def plot_codon_heatmap(codon_dict):
     
     fig.update_layout(title="Codon Usage Frequency Heatmap")
     return fig
+def plot_kmer_distribution(kmer_dict):
+    """Creates a bar chart of the top 10 most frequent k-mers."""
+    if not kmer_dict:
+        return go.Figure()
+
+    # Convert dictionary to a DataFrame and get the top 10
+    df = pd.DataFrame(list(kmer_dict.items()), columns=['k-mer', 'Count'])
+    df = df.sort_values(by='Count', ascending=False).head(10)
+
+    fig = go.Figure([go.Bar(x=df['k-mer'], y=df['Count'])])
+    fig.update_layout(
+        title="Top 10 Most Frequent k-mers",
+        xaxis_title="k-mer",
+        yaxis_title="Frequency Count"
+    )
+    return fig

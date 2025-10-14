@@ -14,7 +14,7 @@ st.header("1. Input Sequence")
 input_sequence = st.text_area("Paste your sequence here (DNA, RNA, or Protein)", height=200, placeholder=">Example Sequence\nACGTACGTACGT...")
 uploaded_file = st.file_uploader("Or upload a FASTA file", type=["fasta", "fa"])
 
-# Logic to handle file upload
+# Logic to handle file upload and cleaning
 if uploaded_file:
     try:
         fasta_string = uploaded_file.getvalue().decode("utf-8")
@@ -23,8 +23,6 @@ if uploaded_file:
     except Exception as e:
         st.error(f"Error parsing FASTA file: {e}")
 
-# --- Sequence Sanitization ---
-# Clean the sequence to remove non-alphabetic characters before any analysis
 cleaned_sequence = ""
 if input_sequence:
     cleaned_sequence = ''.join(filter(str.isalpha, input_sequence)).upper()
@@ -48,7 +46,7 @@ st.divider()
 
 # --- Transcription, Translation, and Complements ---
 st.subheader("Transcription, Translation & Complements")
-tab1, tab2, tab3 = st.tabs(["Transcription (DNA -> RNA)", "6-Frame Translation", "Complements"])
+tab1, tab2, tab3 = st.tabs(["Transcription", "6-Frame Translation", "Complements"])
 with tab1:
     if st.button("Transcribe DNA to RNA"):
         if cleaned_sequence:
@@ -138,5 +136,57 @@ if st.button(f"Find Sites for {selected_enzyme}"):
             st.code("".join(seq_display))
         else:
             st.warning(f"No cut sites found for {selected_enzyme} in the sequence.")
+    else:
+        st.error("Please provide a sequence first.")
+st.divider()
+
+# --- Primer Design ---
+st.subheader("Primer Design")
+st.write("Designs basic primers around a specified target region.")
+col1, col2 = st.columns(2)
+target_start = col1.number_input("Target Start Position", min_value=0, value=100)
+target_end = col2.number_input("Target End Position", min_value=1, value=300)
+if st.button("Design Primers"):
+    if cleaned_sequence:
+        if target_end > target_start and target_end <= len(cleaned_sequence):
+            primers = stoo.design_primers(cleaned_sequence, target_start, target_end)
+            st.dataframe(pd.DataFrame([primers]), use_container_width=True)
+        else:
+            st.error("Invalid target region. Ensure Start < End and the region is within the sequence bounds.")
+    else:
+        st.error("Please provide a sequence first.")
+st.divider()
+
+# --- Motif Search ---
+st.subheader("Motif Search")
+motif_pattern = st.text_input("Enter motif pattern (supports regular expressions)", value="A[ATGC]G")
+
+if st.button("Search for Motif"):
+    if cleaned_sequence:
+        matches = stoo.find_motif(cleaned_sequence, motif_pattern)
+        if matches:
+            st.success(f"Found {len(matches)} instance(s) of the motif '{motif_pattern}'.")
+            df_matches = pd.DataFrame(matches, columns=['Start', 'End'])
+            st.dataframe(df_matches, use_container_width=True)
+        else:
+            st.warning("No matches found for the specified motif.")
+    else:
+        st.error("Please provide a sequence first.")
+st.divider()
+
+# --- k-mer Analysis ---
+st.subheader("k-mer Analysis")
+k_value = st.slider("Select k-mer size (k)", min_value=2, max_value=6, value=3)
+
+if st.button("Analyze k-mers"):
+    if cleaned_sequence:
+        kmer_counts = stoo.kmer_analysis(cleaned_sequence, k_value)
+        if kmer_counts:
+            fig = viz.plot_kmer_distribution(kmer_counts)
+            st.plotly_chart(fig, use_container_width=True)
+            with st.expander("Show Raw Data"):
+                st.dataframe(pd.DataFrame(list(kmer_counts.items()), columns=['k-mer', 'Count']), use_container_width=True)
+        else:
+            st.warning("Could not perform k-mer analysis.")
     else:
         st.error("Please provide a sequence first.")
