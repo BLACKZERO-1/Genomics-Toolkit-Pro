@@ -10,7 +10,7 @@ st.title("🌳 Phylogenetic Analysis")
 # --- Input Section ---
 st.header("1. Input Alignment")
 input_text = st.text_area(
-    "Paste your pre-aligned sequences here (Clastal or FASTA format)",
+    "Paste your pre-aligned sequences here (Clustal or FASTA format)",
     height=300,
     placeholder=">Seq1\nACGT-G\n>Seq2\nAC-TTG\n..."
 )
@@ -46,17 +46,30 @@ st.divider()
 if alignment:
     st.header("2. Tree Construction")
 
-    if st.button("Construct Phylogenetic Tree"):
-        with st.spinner("Building and visualizing tree..."):
-            tree = ptools.build_nj_tree(alignment)
+    method = st.radio("Select Tree Construction Method", ["Neighbor-Joining (NJ)", "UPGMA"])
 
-            if isinstance(tree, str):
-                st.error(f"Failed to build tree: {tree}")
+    bootstrap_replicates = st.slider("Number of Bootstrap Replicates", min_value=10, max_value=1000, value=100, step=10)
+
+    if st.button("Construct Phylogenetic Tree"):
+        with st.spinner("Building tree and running bootstrap... This may be slow."):
+            main_tree = None
+            tree_method_short = 'nj'
+            if method == "Neighbor-Joining (NJ)":
+                main_tree = ptools.build_nj_tree(alignment)
+                tree_method_short = 'nj'
+            elif method == "UPGMA":
+                main_tree = ptools.build_upgma_tree(alignment)
+                tree_method_short = 'upgma'
+
+            if isinstance(main_tree, str):
+                st.error(f"Failed to build tree: {main_tree}")
             else:
-                # The new draw function is simpler and doesn't need a style
-                image_path = ptools.draw_tree(tree)
+                tree_with_support = ptools.apply_bootstrap(main_tree, alignment, bootstrap_replicates, tree_method_short)
+
+                image_path = ptools.draw_tree(tree_with_support)
 
                 st.subheader("Phylogenetic Tree")
+                st.success(f"Bootstrap analysis with {bootstrap_replicates} replicates completed. Support values are shown on branches.")
                 st.image(image_path)
 
                 with open(image_path, "rb") as file:
