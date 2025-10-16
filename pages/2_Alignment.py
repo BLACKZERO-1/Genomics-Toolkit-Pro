@@ -10,8 +10,30 @@ st.title("⛓️ Sequence Alignment Tools")
 
 # --- Input Section ---
 st.header("1. Input Sequences")
+
+# --- NEW CODE ADDED HERE ---
+# Initialize session state for the text input
+if 'alignment_input' not in st.session_state:
+    st.session_state.alignment_input = ""
+
+# Add a section for loading sample data
+st.subheader("Load Sample Data")
+if st.button("Load Sample Alignment"):
+    try:
+        with open("data/sample_multi.fasta", "r") as f:
+            # Read the file content and store it in session state
+            st.session_state.alignment_input = f.read()
+        st.success("Sample alignment data loaded!")
+    except FileNotFoundError:
+        st.error("Error: sample_multi.fasta not found in the 'data' folder.")
+
+st.subheader("Enter Your Data")
+# --- END OF NEW CODE ---
+
+# The text_area now uses session_state to hold its value
 input_text = st.text_area(
     "Paste your multi-FASTA sequences here",
+    value=st.session_state.alignment_input, # This links the text area to the button
     height=250,
     placeholder=">Seq1\nACGT...\n>Seq2\nTGCA..."
 )
@@ -22,7 +44,11 @@ uploaded_file = st.file_uploader(
 )
 
 # Parse sequences and store them in session state for persistence
-sequences = []
+if 'sequences' not in st.session_state:
+    st.session_state.sequences = []
+if 'alignment' not in st.session_state:
+    st.session_state.alignment = None
+
 fasta_content = None
 if input_text:
     fasta_content = input_text
@@ -33,6 +59,7 @@ if fasta_content:
     try:
         stringio = io.StringIO(fasta_content)
         st.session_state.sequences = list(SeqIO.parse(stringio, "fasta"))
+        st.session_state.alignment = None # Reset alignment when new sequences are loaded
         st.success(f"Successfully loaded {len(st.session_state.sequences)} sequences.")
     except Exception as e:
         st.error(f"Error parsing FASTA content: {e}")
@@ -41,8 +68,7 @@ st.divider()
 
 # --- Pairwise Alignment Section ---
 st.header("2. Pairwise Alignment")
-# Use placeholders if no sequences are in session state
-if 'sequences' in st.session_state and st.session_state.sequences:
+if st.session_state.sequences:
     seq_records = {rec.id: rec for rec in st.session_state.sequences}
     seq_ids = list(seq_records.keys())
     selected_id_1 = st.selectbox("Select the first sequence", seq_ids)
@@ -59,9 +85,10 @@ mismatch_penalty = col2.number_input("Mismatch Penalty", value=-1.0)
 gap_penalty = col3.number_input("Gap Penalty", value=-0.5)
 
 if st.button("Perform Pairwise Alignment"):
-    if 'sequences' in st.session_state and st.session_state.sequences:
+    if st.session_state.sequences:
         seq1_record = seq_records[selected_id_1]
         seq2_record = seq_records[selected_id_2]
+        
         alignment_result = atools.pairwise_align(
             str(seq1_record.seq), str(seq2_record.seq), match_score, mismatch_penalty, gap_penalty, align_type
         )
@@ -77,10 +104,9 @@ st.header("3. Multiple Sequence Alignment (MSA)")
 msa_method = st.radio("Select MSA Tool", ("ClustalW", "MUSCLE"))
 
 if st.button("Perform Multiple Sequence Alignment"):
-    if 'sequences' in st.session_state and st.session_state.sequences:
+    if st.session_state.sequences:
         if len(st.session_state.sequences) > 2:
             with st.spinner(f"Running {msa_method}..."):
-                # Store the alignment in session state
                 st.session_state.alignment = atools.multiple_align(st.session_state.sequences, msa_method)
             if st.session_state.alignment:
                 st.success("Multiple Sequence Alignment complete.")
@@ -97,9 +123,8 @@ st.divider()
 st.header("4. Alignment Analysis")
 st.write("Results from the last successful Multiple Sequence Alignment will be shown here.")
 
-# Check if an alignment exists in the session state
-if 'alignment' in st.session_state and st.session_state.alignment:
-    alignment = st.session_state.alignment # Retrieve the alignment
+if st.session_state.alignment:
+    alignment = st.session_state.alignment
     
     st.subheader("MSA Result")
     st.text_area("Alignment", str(alignment), height=400)

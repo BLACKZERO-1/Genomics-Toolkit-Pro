@@ -11,7 +11,27 @@ st.title("🔬 Sequence Analysis Tools")
 # --- Input Section ---
 st.header("1. Input Sequence")
 
-input_sequence = st.text_area("Paste your sequence here (DNA, RNA, or Protein)", height=200, placeholder=">Example Sequence\nACGTACGTACGT...")
+# --- NEW CODE ADDED HERE ---
+# Initialize session state to hold the sequence input
+if 'sequence_input' not in st.session_state:
+    st.session_state.sequence_input = ""
+
+# Add a section for loading sample data
+st.subheader("Load Sample Data")
+if st.button("Load Sample DNA"):
+    try:
+        with open("data/sample_dna.fasta", "r") as f:
+            # Read the file, skip the header, join lines, and store in session state
+            st.session_state.sequence_input = "".join(f.read().splitlines()[1:])
+        st.success("Sample DNA sequence loaded!")
+    except FileNotFoundError:
+        st.error("Error: sample_dna.fasta not found in the 'data' folder.")
+
+st.subheader("Enter Your Data")
+# The text_area now uses the value from session_state
+input_sequence = st.text_area("Paste your sequence here (DNA, RNA, or Protein)", value=st.session_state.sequence_input, height=200, key="sequence_text_area")
+# --- END OF NEW CODE ---
+
 uploaded_file = st.file_uploader("Or upload a FASTA file", type=["fasta", "fa"])
 
 # Logic to handle file upload and cleaning
@@ -20,12 +40,13 @@ if uploaded_file:
         fasta_string = uploaded_file.getvalue().decode("utf-8")
         sequence_lines = fasta_string.splitlines()[1:]
         input_sequence = "".join(sequence_lines)
+        st.session_state.sequence_input = input_sequence # Also update session state on upload
     except Exception as e:
         st.error(f"Error parsing FASTA file: {e}")
 
 cleaned_sequence = ""
 if input_sequence:
-    cleaned_sequence = ''.join(filter(str.isalpha, input_sequence)).upper()
+    cleaned_sequence = ''.join(filter(str.isalpha, input_sequence)).upper().replace("U", "T")
 
 st.divider()
 

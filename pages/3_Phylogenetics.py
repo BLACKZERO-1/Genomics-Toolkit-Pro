@@ -9,8 +9,30 @@ st.title("🌳 Phylogenetic Analysis")
 
 # --- Input Section ---
 st.header("1. Input Alignment")
+
+# --- NEW CODE ADDED HERE ---
+# Initialize session state to hold the text input
+if 'phylo_input' not in st.session_state:
+    st.session_state.phylo_input = ""
+
+# Add a section for loading sample data
+st.subheader("Load Sample Data")
+if st.button("Load Sample Alignment Data"):
+    try:
+        with open("data/sample_multi.fasta", "r") as f:
+            # Read the file content and store it in session state
+            st.session_state.phylo_input = f.read()
+        st.success("Sample alignment data loaded!")
+    except FileNotFoundError:
+        st.error("Error: sample_multi.fasta not found in the 'data' folder.")
+
+st.subheader("Enter Your Data")
+# --- END OF NEW CODE ---
+
+# The text_area now uses the value from session_state
 input_text = st.text_area(
     "Paste your pre-aligned sequences here (Clustal or FASTA format)",
+    value=st.session_state.phylo_input, # This links the text area to the button
     height=300,
     placeholder=">Seq1\nACGT-G\n>Seq2\nAC-TTG\n..."
 )
@@ -72,12 +94,26 @@ if alignment:
                 st.success(f"Bootstrap analysis with {bootstrap_replicates} replicates completed. Support values are shown on branches.")
                 st.image(image_path)
 
+                st.divider()
+                st.subheader("Export Options")
+                col1, col2 = st.columns(2)
+
+                # Column 1: Download Tree Image (PNG)
                 with open(image_path, "rb") as file:
-                    st.download_button(
-                        label="Download Tree Image (PNG)",
+                    col1.download_button(
+                        label="Download Tree as PNG",
                         data=file,
                         file_name="phylogenetic_tree.png",
                         mime="image/png"
                     )
+
+                # Column 2: Download Tree Data (Newick format)
+                newick_data = tree_with_support.format("newick")
+                col2.download_button(
+                    label="Download Tree as Newick (.nwk)",
+                    data=newick_data,
+                    file_name="phylogenetic_tree.nwk",
+                    mime="text/plain"
+                )
 else:
     st.info("Paste or upload an alignment file to begin.")
