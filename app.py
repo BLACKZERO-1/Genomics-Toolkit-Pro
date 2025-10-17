@@ -37,14 +37,13 @@ if 'alignment' not in st.session_state:
     st.session_state.alignment = None
 
 # --- Sidebar Navigation ---
-# The line for st.sidebar.title is removed.
-page = st.sidebar.radio("", ["🏠 Home", "🔬 Sequence Analysis", "⛓️ Sequence Alignment", "🌳 Phylogenetic Analysis"])
+st.sidebar.title("Genomics Toolkit")
+page = st.sidebar.radio("Modules", ["🏠 Home", "🔬 Sequence Analysis", "⛓️ Sequence Alignment", "🌳 Phylogenetic Analysis"])
 
 # =====================================================================================
 # --- HOME PAGE ---
 # =====================================================================================
 if page == "🏠 Home":
-    # The line for st.sidebar.success is now removed.
     st.title("🧬 Genomics Toolkit Pro")
     st.markdown("Welcome to your one-stop solution for advanced genomics analysis. This toolkit provides a suite of powerful tools for sequence analysis, alignment, and phylogenetics.")
     st.divider()
@@ -64,10 +63,10 @@ if page == "🏠 Home":
             st.write("Construct and visualize phylogenetic trees from alignments.")
     st.divider()
     st.header("Project Dashboard")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Tools Implemented", "20+", "Sequence, Alignment, Phylo")
-    col2.metric("Analyses Performed", "1,245", "7%")
-    col3.metric("Sample Datasets", "3", "FASTA format")
+    d1, d2, d3 = st.columns(3)
+    d1.metric("Tools Implemented", "20+", "Sequence, Alignment, Phylo")
+    d2.metric("Analyses Performed", "1,245", "7%")
+    d3.metric("Sample Datasets", "3", "FASTA format")
 
 # =====================================================================================
 # --- SEQUENCE ANALYSIS PAGE ---
@@ -153,12 +152,11 @@ elif page == "🔬 Sequence Analysis":
     st.divider()
 
     st.subheader("Restriction Site Analysis")
-    enzyme = st.selectbox("Enzyme", ["EcoRI", "BamHI", "HindIII"])
+    enzyme = st.selectbox("Enzyme", ["EcoRI", "BamHI", "HindIII", "NotI", "SacI", "SpeI", "XbaI"])
     if st.button(f"Find {enzyme} Sites"):
         if cleaned_sequence:
             sites = stoo.find_restriction_sites(cleaned_sequence, enzyme)
-            if sites:
-                st.success(f"Found {len(sites)} site(s) at: {sites}")
+            if sites: st.success(f"Found {len(sites)} site(s) at: {', '.join(map(str, sites))}")
             else: st.warning("No sites found.")
         else: st.error("Provide a sequence first.")
     st.divider()
@@ -169,8 +167,7 @@ elif page == "🔬 Sequence Analysis":
     end = e.number_input("Target End", 1, 1000, 300)
     if st.button("Design Primers"):
         if cleaned_sequence:
-            if end > start and end <= len(cleaned_sequence):
-                st.dataframe(pd.DataFrame([stoo.design_primers(cleaned_sequence, start, end)]))
+            if end > start and end <= len(cleaned_sequence): st.dataframe(pd.DataFrame([stoo.design_primers(cleaned_sequence, start, end)]))
             else: st.error("Invalid region.")
         else: st.error("Provide a sequence first.")
     st.divider()
@@ -210,6 +207,7 @@ elif page == "⛓️ Sequence Alignment":
             st.error("Error: sample_multi.fasta not found.")
     input_text = st.text_area("Paste multi-FASTA", value=st.session_state.alignment_input, height=250)
     uploaded_file = st.file_uploader("Or upload multi-FASTA file", type=["fasta", "fa"], key="align_uploader")
+
     fasta_content = input_text or (uploaded_file.getvalue().decode("utf-8") if uploaded_file else None)
     if fasta_content:
         try:
@@ -218,43 +216,55 @@ elif page == "⛓️ Sequence Alignment":
             st.success(f"Loaded {len(st.session_state.sequences)} sequences.")
         except Exception as e:
             st.error(f"Error parsing FASTA: {e}")
+
     st.divider()
     st.header("2. Pairwise Alignment")
+
     if st.session_state.sequences:
         records = {rec.id: rec for rec in st.session_state.sequences}
         ids = list(records.keys())
         id1 = st.selectbox("Seq 1", ids)
         id2 = st.selectbox("Seq 2", ids, index=min(1, len(ids)-1))
     else:
-        st.selectbox("Seq 1", ["No sequences"])
-        st.selectbox("Seq 2", ["No sequences"])
+        st.selectbox("Seq 1", ["No sequences loaded"])
+        st.selectbox("Seq 2", ["No sequences loaded"])
+
     st.subheader("Parameters")
     align_type = st.radio("Type", ("Global", "Local"))
     m, mm, g = st.columns(3)
     match = m.number_input("Match", value=1.0)
     mismatch = mm.number_input("Mismatch", value=-1.0)
     gap = g.number_input("Gap", value=-0.5)
+
     if st.button("Run Pairwise"):
         if st.session_state.sequences:
             res = atools.pairwise_align(str(records[id1].seq), str(records[id2].seq), match, mismatch, gap, align_type)
             st.code(res)
-        else: st.error("Upload sequences.")
+        else: 
+            st.error("Upload sequences first.")
     st.divider()
+
     st.header("3. Multiple Sequence Alignment (MSA)")
     msa_method = st.radio("Tool", ("ClustalW", "MUSCLE"))
+
     if st.button("Run MSA"):
         if st.session_state.sequences and len(st.session_state.sequences) > 2:
             with st.spinner(f"Running {msa_method}..."):
                 st.session_state.alignment = atools.multiple_align(st.session_state.sequences, msa_method)
-            if st.session_state.alignment: st.success("MSA complete.")
-            else: st.error("MSA failed.")
-        else: st.warning("Requires >= 3 sequences.")
+            if st.session_state.alignment: 
+                st.success("MSA complete.")
+            else: 
+                st.error("MSA failed.")
+        else: 
+            st.warning("Requires at least 3 sequences.")
     st.divider()
+
     st.header("4. Alignment Analysis")
+    st.write("Results from the last successful MSA will be shown here.")
     if st.session_state.alignment:
         aln = st.session_state.alignment
         st.text_area("Alignment", str(aln), height=300)
-        st.download_button("Download", str(aln), "alignment.aln")
+        st.download_button("Download Alignment (.aln)", str(aln), "alignment.aln")
         st.subheader("Consensus")
         st.code(atools.generate_consensus(aln))
         st.subheader("Conservation")
@@ -262,7 +272,7 @@ elif page == "⛓️ Sequence Alignment":
         st.subheader("Identity Matrix")
         st.plotly_chart(viz.plot_identity_heatmap(atools.identity_matrix(aln), [rec.id for rec in aln]))
     else:
-        st.info("Run MSA to see analysis.")
+        st.info("Run an MSA to see the analysis results.")
 
 # =====================================================================================
 # --- PHYLOGENETICS PAGE ---
@@ -270,6 +280,7 @@ elif page == "⛓️ Sequence Alignment":
 elif page == "🌳 Phylogenetic Analysis":
     st.title("🌳 Phylogenetic Analysis")
     st.header("1. Input Alignment")
+
     if st.button("Load Sample Alignment Data"):
         try:
             with open("data/sample_multi.fasta", "r") as f:
@@ -278,8 +289,10 @@ elif page == "🌳 Phylogenetic Analysis":
             st.rerun()
         except FileNotFoundError:
             st.error("Error: sample_multi.fasta not found.")
+
     input_text = st.text_area("Paste alignment", value=st.session_state.phylo_input, height=200)
     uploaded_file = st.file_uploader("Or upload alignment file", type=["fasta", "fa", "aln"], key="phylo_uploader")
+
     aln_content = input_text or (uploaded_file.getvalue().decode("utf-8") if uploaded_file else None)
     if aln_content:
         stringio = io.StringIO(aln_content)
@@ -294,20 +307,24 @@ elif page == "🌳 Phylogenetic Analysis":
             except Exception as e:
                 st.error(f"Error parsing alignment: {e}")
     st.divider()
+
     st.header("2. Tree Construction")
     if 'alignment' in st.session_state and st.session_state.alignment:
         method = st.radio("Method", ["Neighbor-Joining (NJ)", "UPGMA"])
         bootstrap_replicates = st.slider("Bootstrap Replicates", 10, 1000, 100, 10)
+
         if st.button("Build Tree"):
-            with st.spinner("Building tree..."):
+            with st.spinner("Building tree and running bootstrap... This may be slow."):
                 tree_method_short = 'nj' if method == "Neighbor-Joining (NJ)" else 'upgma'
                 main_tree = ptools.build_nj_tree(st.session_state.alignment) if tree_method_short == 'nj' else ptools.build_upgma_tree(st.session_state.alignment)
+
                 if isinstance(main_tree, str):
                     st.error(f"Failed: {main_tree}")
                 else:
                     tree_with_support = ptools.apply_bootstrap(main_tree, st.session_state.alignment, bootstrap_replicates, tree_method_short)
                     img_path = ptools.draw_tree(tree_with_support)
                     st.image(img_path)
+
                     st.subheader("Export Options")
                     col1, col2 = st.columns(2)
                     with open(img_path, "rb") as f:
@@ -315,4 +332,4 @@ elif page == "🌳 Phylogenetic Analysis":
                     newick_data = tree_with_support.format("newick")
                     col2.download_button("Download Newick (.nwk)", newick_data, "tree.nwk")
     else:
-        st.info("Upload alignment to build a tree.")
+        st.info("Upload an alignment to build a tree.")
