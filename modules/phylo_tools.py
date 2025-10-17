@@ -1,7 +1,6 @@
 from Bio.Phylo.TreeConstruction import DistanceCalculator, DistanceTreeConstructor
-from Bio import AlignIO
-from Bio import Phylo
-from Bio.Phylo.Consensus import get_support  # ** THE FINAL FIX: Import 'get_support' directly **
+from Bio import AlignIO, Phylo
+from Bio.Phylo.Consensus import get_support
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -52,7 +51,6 @@ def apply_bootstrap(main_tree, alignment, replicates, method):
         tree = constructor.build_tree(aln)
         trees.append(tree)
 
-    # ** THE FINAL FIX: Call the directly imported 'get_support' function **
     support_tree = get_support(main_tree, trees)
 
     return support_tree

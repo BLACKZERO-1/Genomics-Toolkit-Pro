@@ -1,0 +1,79 @@
+/* --- 1. IMPORT A PROFESSIONAL FONT --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+/* --- 2. GLOBAL STYLES & SCROLLBAR --- */
+* {
+    font-family: 'Poppins', sans-serif;
+}
+body {
+    color: #f1f1f1; /* Light text for dark backgrounds */
+}
+
+/* Custom scrollbar for a modern look */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #2e2e48;
+}
+::-webkit-scrollbar-thumb {
+    background: #4F8BF9;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3A6DC2;
+}
+
+/* --- 3. CINEMATIC BACKGROUND --- */
+[data-testid="stAppViewContainer"] > .main {
+    background-image: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    background-size: 180% 180%;
+    animation: gradient-animation 15s ease infinite;
+}
+
+@keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --- 4. SIDEBAR --- */
+[data-testid="stSidebar"] {
+    background-color: rgba(38, 39, 48, 0.5);
+    backdrop-filter: blur(15px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* --- 5. WIDGETS (BUTTONS, TEXT BOXES, ETC.) --- */
+.stButton > button {
+    color: #ffffff;
+    background-color: #4F8BF9;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(79, 139, 249, 0.3);
+}
+.stButton > button:hover {
+    background-color: #3A6DC2;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 139, 249, 0.4);
+}
+
+.stTextArea textarea, .stTextInput input {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: #f1f1f1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+/* --- 6. CONTAINERS & CARDS --- */
+[data-testid="stMetric"],
+[data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] [data-testid="stVerticalBlock"] {
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
