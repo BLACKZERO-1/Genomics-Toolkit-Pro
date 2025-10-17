@@ -1,5 +1,6 @@
 from Bio.Phylo.TreeConstruction import DistanceCalculator, DistanceTreeConstructor
-from Bio import AlignIO, Phylo
+from Bio import AlignIO
+from Bio import Phylo
 from Bio.Phylo.Consensus import get_support
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
